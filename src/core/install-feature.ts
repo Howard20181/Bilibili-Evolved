@@ -36,25 +36,25 @@ export const installFeatureFromCode = async (
   metadata: FeatureType
   message: string
 }> => {
-  const { parseExternalInput } = await import('../core/external-input')
-  const item = await parseExternalInput<FeatureType>(code)
+  const { loadFeatureCode } = await import('../core/external-input')
+  const item = loadFeatureCode(code) as FeatureType
   const { type, installer } = (() => {
     if (isComponent(item)) {
       return {
         type: 'component',
-        installer: () => installComponent(code),
+        installer: () => installComponent(code, item),
       }
     }
     if (isPlugin(item)) {
       return {
         type: 'plugin',
-        installer: () => installPlugin(code),
+        installer: () => installPlugin(code, item),
       }
     }
     if (isStyle(item)) {
       return {
         type: 'style',
-        installer: () => installStyle(code),
+        installer: () => installStyle(item),
       }
     }
     throw new Error('无效的功能代码')

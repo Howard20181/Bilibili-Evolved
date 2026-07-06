@@ -5,18 +5,16 @@ import { Toast } from '@/core/toast'
 import { videoAndBangumiUrls } from '@/core/utils/urls'
 import { DownloadVideoAssets } from '../../download/types'
 import { DanmakuDownloadType } from './utils'
+import { downloadDanmakuOptions } from './options'
 
 export const component = defineComponentMetadata({
   name: 'downloadDanmaku',
   displayName: '下载弹幕',
-  description: {
-    'zh-CN':
-      '启用下载弹幕支持, 在视频和番剧页面中可从功能面板里下载弹幕. 请注意 ASS 弹幕下载不会包含高级弹幕, 字幕弹幕等.',
-  },
   tags: [componentsTags.video],
   entry: none,
   reload: none,
   unload: none,
+  options: downloadDanmakuOptions,
   plugin: {
     displayName: '下载视频 - 下载弹幕支持',
     setup: ({ addData }) => {

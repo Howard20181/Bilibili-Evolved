@@ -1,7 +1,7 @@
 import path from 'path'
 import lodash from 'lodash'
 import { Configuration } from 'webpack'
-import { getDefaultConfig } from '../../webpack/webpack.config'
+import { enableProductionSourceMap, getDefaultConfig } from '../../webpack/webpack.config'
 import { getId } from '../lib/id'
 
 export const buildByEntry = (params: {
@@ -34,6 +34,8 @@ export const buildByEntry = (params: {
     },
     cache: false,
     externals: [
+      // see src/client/init-vue.ts
+      { vue: 'global Vue' },
       ...(defaultConfig.externals as any[]),
       ({ request }, callback) => {
         const regexMatch = (regex: RegExp, base: string[]) => {
@@ -78,6 +80,9 @@ export const buildByEntry = (params: {
         return callback()
       },
     ],
+  }
+  if (mode === 'production' && ['component', 'plugin'].includes(type)) {
+    return enableProductionSourceMap(config, `registry/dist/${type}s/`)
   }
   return config
 }

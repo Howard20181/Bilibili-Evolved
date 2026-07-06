@@ -28,7 +28,7 @@ export const festivalUrls = [/\/\/www\.bilibili\.com\/festival\//]
 /** 含有普通视频的页面 */
 export const videoUrls = ['//www.bilibili.com/video/', ...festivalUrls, ...mediaListUrls]
 /** 含有番剧的页面 */
-export const bangumiUrls = ['//www.bilibili.com/bangumi/']
+export const bangumiUrls = ['//www.bilibili.com/bangumi/play/']
 /** 含有课程的页面 */
 export const cheeseUrls = ['//www.bilibili.com/cheese/']
 /** 视频和番剧页面 */
@@ -38,6 +38,7 @@ export const allVideoUrls = [...videoAndBangumiUrls, ...cheeseUrls]
 /** 主站及各分区页面 */
 export const mainSiteUrls = [
   'https://www.bilibili.com/v/',
+  'https://www.bilibili.com/c/',
   /^https:\/\/www\.bilibili\.com\/$/,
   /^https:\/\/www\.bilibili\.com\/([^\/]+)\.html$/,
   /^https:\/\/www\.bilibili\.com\/watchlater\/#\/list$/,
@@ -52,7 +53,11 @@ export const feedsUrlsWithoutDetail = [
   /^https:\/\/live\.bilibili\.com\/(blanc\/)?[\d]+/,
 ]
 /** 含有动态的页面 */
-export const feedsUrls = [...feedsUrlsWithoutDetail, /^https:\/\/t\.bilibili\.com\//]
+export const feedsUrls = [
+  ...feedsUrlsWithoutDetail,
+  /^https:\/\/t\.bilibili\.com\//,
+  /^https:\/\/www\.bilibili\.com\/opus\/[\d]+$/,
+]
 /** 含有专栏的页面 */
 export const columnUrls = [/^https:\/\/www\.bilibili\.com\/read\/cv/]
 /** 含有播放器的页面 */

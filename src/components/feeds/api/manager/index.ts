@@ -1,16 +1,22 @@
-import { getCookieValue } from '@/core/utils'
+import { getCookieValue, matchUrlPattern } from '@/core/utils'
+import { feedsUrls } from '@/core/utils/urls'
 import { FeedsCardCallback } from '../types'
 import { feedsCardCallbacks } from './base'
 import { FeedsCardsManagerV1 } from './v1'
 import { FeedsCardsManagerV2 } from './v2'
 
 export * from './base'
+export { normalizeFeedsCardModules } from './v2'
 export const isV2Feeds = () => {
   const hasCookieValue = parseInt(getCookieValue('hit-dyn-v2')) > 0
   if (!hasCookieValue) {
     return false
   }
-  return ['t.bilibili.com', 'space.bilibili.com'].some(host => location.host === host)
+  return [
+    't.bilibili.com',
+    'space.bilibili.com',
+    /^https:\/\/www\.bilibili\.com\/opus\/[\d]+$/,
+  ].some(pattern => matchUrlPattern(pattern))
 }
 export const feedsCardsManager = (() => {
   const isV2 = isV2Feeds()
@@ -24,6 +30,10 @@ export const feedsCardsManager = (() => {
  * @param callback 回调函数
  */
 export const forEachFeedsCard = async (callback: FeedsCardCallback) => {
+  if (feedsUrls.every(url => !matchUrlPattern(url))) {
+    return null
+  }
+
   const success = await feedsCardsManager.startWatching()
   if (!success) {
     console.error('feedsCardsManager.startWatching() failed')

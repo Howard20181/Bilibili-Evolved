@@ -12,12 +12,14 @@
     "strict": false,
     "noImplicitAny": false,
     "sourceMap": true,
-    "baseUrl": ".",
     "paths": {
       "@/*": [
-        "src/*"
+        "./src/*"
       ]
     }
+  },
+  "vueCompilerOptions": {
+    "target": 2.7
   },
   "include": [
     "src/**/*",

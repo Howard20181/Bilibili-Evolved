@@ -307,7 +307,6 @@ export class ExtendSpeedComponent extends EntrySpeedComponent<Options> {
     }
   }
 
-  // eslint-disable-next-line class-methods-use-this
   getSpeedContextMixin({ menuListElement }: SpeedContext): Partial<SpeedContext> {
     return {
       query: (speed: number) =>

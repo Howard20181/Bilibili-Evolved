@@ -4,14 +4,11 @@ import { hasVideo } from '@/core/spin-query'
 import { Toast } from '@/core/toast'
 import { videoAndBangumiUrls } from '@/core/utils/urls'
 import { DownloadVideoAssets } from '../../download/types'
-import { getBlobByType, SubtitleDownloadType } from './utils'
+import { getSubtitleBlob, SubtitleDownloadType } from './utils'
 
 export const component = defineComponentMetadata({
   name: 'downloadSubtitle',
   displayName: '下载字幕',
-  description: {
-    'zh-CN': '启用下载字幕支持, 在视频页面中可从功能面板里下载字幕.',
-  },
   tags: [componentsTags.video],
   entry: none,
   urlInclude: videoAndBangumiUrls,
@@ -41,7 +38,7 @@ export const component = defineComponentMetadata({
             let downloadedItemCount = 0
             const results = await Promise.allSettled(
               infos.map(async info => {
-                const blob = await getBlobByType(type, info.input)
+                const blob = await getSubtitleBlob(type, info.input)
                 downloadedItemCount++
                 toast.message = `获取字幕中... (${downloadedItemCount}/${infos.length})`
                 return {

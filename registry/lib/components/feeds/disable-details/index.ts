@@ -26,10 +26,16 @@ const entry = async () => {
         }
         const contents = dqa(
           element,
-          '.content, .bili-dyn-content [data-module="desc"] .bili-rich-text',
+          '.content, .bili-dyn-content [data-module="desc"] .bili-rich-text, .dyn-card-opus__summary',
         )
         const target = e.target as HTMLElement
         if (target.hasAttribute('click-title')) {
+          return
+        }
+        if (target.hasAttribute('data-pics')) {
+          return
+        }
+        if (target.parentElement?.classList.contains('dyn-card-opus__summary__action')) {
           return
         }
         if (
@@ -38,6 +44,8 @@ const entry = async () => {
             'bili-rich-text-topic',
             'bili-rich-text-module',
             'bili-rich-text-link',
+            'bili-rich-text-viewpic',
+            'opus-text-rich-hl',
           ].some(className => target.classList.contains(className))
         ) {
           return
@@ -69,7 +77,10 @@ const entry = async () => {
       return
     }
     if (postContent.classList.contains('repost') || card.type === feedsCardTypes.repost) {
-      const contents = dq(postContent, '.content, .bili-dyn-content__orig__desc') as HTMLElement
+      const contents = dq(
+        postContent,
+        '.content, .bili-dyn-content__orig__desc, .dyn-card-opus__summary',
+      ) as HTMLElement
       if (!contents) {
         return
       }
@@ -91,9 +102,6 @@ export const component = defineComponentMetadata({
   displayName: '禁止跳转动态详情',
   tags: [componentsTags.feeds],
   urlInclude: feedsUrls,
-  description: {
-    'zh-CN': '禁止动态点击后跳转详情页, 方便选择其中的文字.',
-  },
   entry,
   unload: () => {
     document.getElementById(id)?.remove()

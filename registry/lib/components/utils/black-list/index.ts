@@ -1,8 +1,8 @@
 import { defineComponentMetadata } from '@/components/define'
-import { mainSiteUrls } from '@/core/utils/urls'
 import { allMutationsOn } from '@/core/observer'
 import { selectAll } from '@/core/spin-query'
-import { registerData, getData } from '@/plugins/data'
+import { mainSiteUrls } from '@/core/utils/urls'
+import { getData, registerData } from '@/plugins/data'
 import { BlackListDataKey } from './common'
 
 const name = 'blackList'
@@ -14,7 +14,7 @@ const entry = async ({ settings: { options } }) => {
   }
 
   registerData(BlackListDataKey, blackListData)
-  const billGrid = await selectAll('.bili-grid')
+  const billGrid = await selectAll('.feed2')
   allMutationsOn(billGrid, async () => {
     const videos = await selectAll('.bili-video-card')
     if (!videos) {
@@ -75,10 +75,6 @@ export const component = defineComponentMetadata({
   },
   displayName: '屏蔽黑名单up主',
   tags: [componentsTags.utils],
-  description: {
-    'zh-CN':
-      '屏蔽黑名单up主, 根据up主的名称进行匹配，支持精确匹配和正则匹配. 请注意只能在首页中使用或调整设置.',
-  },
   author: {
     name: 'snowraincloud',
     link: 'https://github.com/snowraincloud',

@@ -15,7 +15,7 @@ enum IntersectionMode {
 export const component = defineComponentMetadata({
   name: 'playerIntersectionActions',
   author: {
-    name: 'FoundTheWOUT',
+    name: 'Waua',
     link: 'https://github.com/FoundTheWOUT',
   },
   tags: [componentsTags.video],
@@ -132,9 +132,6 @@ export const component = defineComponentMetadata({
     })
   },
   displayName: '播放器位置动作',
-  description: {
-    'zh-CN': '设置当播放器移出视图的位置变化时执行的动作.',
-  },
   options: {
     triggerLocation: {
       defaultValue: IntersectionMode.Medium,

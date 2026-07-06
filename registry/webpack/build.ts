@@ -1,17 +1,25 @@
-import glob from 'glob'
+import path from 'path'
+import { sync } from 'glob'
 import { buildByEntry } from './config'
 
+const shorten = (p: string, type: string) => path.dirname(p).replace(`./registry/lib/${type}s/`, '')
+
 export const builders = Object.fromEntries(
-  ['component', 'plugin', 'doc'].map(type => {
+  ['component', 'plugin'].map(type => {
     const src = `./registry/lib/${type}s/`
     return [
       type,
       async ({ buildAll = false } = {}) => {
-        const entries = glob.sync(`${src}**/index.ts`)
+        const entries = sync(`${src}**/index.ts`, { posix: true, dotRelative: true }).map(
+          entry => ({
+            name: shorten(entry, type),
+            value: entry,
+          }),
+        )
 
         if (buildAll) {
           console.log(`[build all] discovered ${entries.length} ${type}s`)
-          return entries.map(entry => buildByEntry({ src, type, entry }))
+          return entries.map(({ value }) => buildByEntry({ src, type, entry: value }))
         }
 
         let entry: string
@@ -25,9 +33,9 @@ export const builders = Object.fromEntries(
           })
           entry = await prompt.run()
         } else {
-          ;[entry] = entries
-          console.log(`Build target · ${entry}`)
+          ;[{ value: entry }] = entries
         }
+        console.log(`Build target · ${entry}`)
         return [buildByEntry({ src, type, entry })]
       },
     ]

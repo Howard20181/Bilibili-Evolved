@@ -1,3 +1,4 @@
+import lodash from 'lodash'
 import webpack, { Configuration } from 'webpack'
 import { getBanner, getDefaultConfig } from './webpack.config'
 import previewConfig from './webpack.dev'
@@ -18,11 +19,13 @@ mainConfig.plugins.push(
   }),
 )
 
+// see src/client/init-vue.ts
+lodash.set(mainConfig, 'resolve.alias.vue$', 'vue/dist/vue.runtime.common.prod.js')
+
 previewConfig.output.filename = 'bilibili-evolved.preview.user.js'
 previewConfig.mode = 'production'
 const targets = [mainConfig, previewConfig].map(config => {
   config.cache = { type: 'memory' }
-  config.devtool = false
   return config
 })
 

@@ -1,12 +1,7 @@
 import { childList } from '@/core/observer'
 import { descendingStringSort } from '@/core/utils/sort'
-import { pascalCase } from '@/core/utils'
-import {
-  createNodeValidator,
-  FeedsCardsManager,
-  FeedsCardsManagerEventType,
-  getVueData,
-} from './base'
+import { pascalCase, getVue2Data } from '@/core/utils'
+import { createNodeValidator, FeedsCardsManager, FeedsCardsManagerEventType } from './base'
 import { FeedsCard, FeedsCardType, feedsCardTypes, isRepostType } from '../types'
 import { selectAll } from '@/core/spin-query'
 
@@ -20,6 +15,13 @@ const feedsCardTypeMap = {
   DynamicTypeArticle: feedsCardTypes.column,
   DynamicTypeMusic: feedsCardTypes.audio,
   DynamicTypeLiveRcmd: feedsCardTypes.liveRecord,
+  DynamicTypeCoursesSeason: feedsCardTypes.courses,
+  DynamicTypeOpus: feedsCardTypes.textWithImages,
+  DynamicTypeLive: feedsCardTypes.live,
+  DynamicTypeMedialist: feedsCardTypes.mediaList,
+  DynamicTypeSubscription: feedsCardTypes.mediaList,
+  DynamicTypeUgcSeason: feedsCardTypes.ugcSeason,
+  DynamicTypeCommonSquare: feedsCardTypes.commonSquare,
 }
 
 const combineText = (...texts: string[]) =>
@@ -28,34 +30,89 @@ const combineText = (...texts: string[]) =>
     .join('\n')
     .trim()
 const getType = (rawType: string): FeedsCardType =>
-  feedsCardTypeMap[pascalCase(rawType)] ?? feedsCardTypeMap.DynamicTypeWord
+  feedsCardTypeMap[pascalCase(rawType)] ?? feedsCardTypes.unknown
 const getText = (dynamicModule: any, cardType: FeedsCardType) => {
-  const { desc: mainDesc, major } = dynamicModule
-  const mainText = mainDesc?.text ?? ''
-  let typeText = ''
-  switch (cardType) {
-    default: {
-      break
-    }
-    case feedsCardTypes.bangumi:
-    case feedsCardTypes.column:
-    case feedsCardTypes.video: {
-      const target = major.archive ?? major.pgc ?? major.article
-      if (target) {
-        const { title, desc } = target
-        typeText = combineText(title, desc)
-      } else if (major.opus) {
-        const { title, summary } = major.opus
-        typeText = combineText(title, summary.text)
-      }
-      break
-    }
+  const isOpusModule = Object.hasOwn(dynamicModule, 'paragraphs')
+  if (isOpusModule) {
+    const paragraphs = dynamicModule.paragraphs as any[]
+    const textParagraph = paragraphs.find(it => it.para_type === 1)
+    const text = (textParagraph.text.nodes as any[])
+      .map(node => {
+        if (node.type === 'TEXT_NODE_TYPE_WORD') {
+          return lodash.get(node, 'word.words')
+        }
+        if (node.type === 'TEXT_NODE_TYPE_RICH') {
+          return lodash.get(node, 'rich.orig_text')
+        }
+        return ''
+      })
+      .join('')
+    return text
   }
+  const { desc: mainDesc, major } = dynamicModule
+  const mainText = (() => {
+    if (major?.opus) {
+      return lodash.get(major.opus, 'summary.text')
+    }
+    return mainDesc?.text ?? ''
+  })()
+  const typeText = (() => {
+    switch (cardType) {
+      default: {
+        return ''
+      }
+      case feedsCardTypes.bangumi:
+      case feedsCardTypes.column:
+      case feedsCardTypes.video: {
+        const target = major.archive ?? major.pgc ?? major.article
+        if (target) {
+          const { title, desc } = target
+          return combineText(title, desc)
+        }
+        if (major.opus) {
+          const { title, summary } = major.opus
+          return combineText(title, summary.text)
+        }
+        return ''
+      }
+    }
+  })()
   return combineText(mainText, typeText)
 }
+
+/** 将动态卡片的 modules 标准化为键值对
+ * > 键值对的形式是动态卡片曾经的形式, 后来 b 站改为数组形式, 为方便脚本操作, 仍然提供此方法转换为键值对方便读取.
+ */
+export const normalizeFeedsCardModules = (
+  modules: any[],
+  keyMapper: (key: string) => string = key => key,
+): Record<string, any> => {
+  if (!Array.isArray(modules)) {
+    return modules
+  }
+  return Object.fromEntries(
+    modules.map(it => {
+      const [[key, value]] = Object.entries(it).filter(
+        ([k, v]) => k !== 'module_type' && Boolean(v),
+      )
+      if (key === 'module_content') {
+        return ['module_dynamic', value]
+      }
+      return [keyMapper(key), value]
+    }),
+  )
+}
+
 const parseCard = async (element: HTMLElement): Promise<FeedsCard> => {
-  const vueData = getVueData(element)
-  const { modules, id_str, type } = vueData.data
+  const vueData = getVue2Data(element)
+  const { modules: rawModules, id_str, type } = vueData.data
+  const keyMapper = (key: string) => {
+    if (key === 'module_content') {
+      return 'module_dynamic'
+    }
+    return key
+  }
+  const modules = normalizeFeedsCardModules(rawModules, keyMapper)
   const { name } = modules.module_author
   const { like, forward, comment } = modules.module_stat
   const cardType = getType(type)
@@ -81,7 +138,7 @@ const parseCard = async (element: HTMLElement): Promise<FeedsCard> => {
     const {
       module_author: { name: repostUsername },
       module_dynamic: repostDynamicModule,
-    } = vueData.data.orig.modules
+    } = normalizeFeedsCardModules(vueData.data.orig.modules)
     const repostCardType = getType(vueData.data.orig.type)
     card.repostUsername = repostUsername
     card.repostText = getText(repostDynamicModule, repostCardType)
@@ -90,6 +147,7 @@ const parseCard = async (element: HTMLElement): Promise<FeedsCard> => {
     }
     card.getText = async () =>
       combineText(getText(modules.module_dynamic, cardType), getText(repostDynamicModule, cardType))
+    card.repostId = vueData.data.orig.id_str
   }
   card.text = await card.getText()
   card.element.setAttribute('data-did', card.id)
@@ -97,7 +155,7 @@ const parseCard = async (element: HTMLElement): Promise<FeedsCard> => {
   await selectAll(() => element.querySelectorAll('.bili-dyn-item *'), { queryInterval: 50 })
   return card
 }
-const isNodeValid = createNodeValidator('.bili-dyn-list__item, .bili-dyn-item')
+const isNodeValid = createNodeValidator('.bili-dyn-list__item, .bili-dyn-item, .bili-opus-view')
 
 /** 新版动态卡片管理器实现 */
 export class FeedsCardsManagerV2 extends FeedsCardsManager {
@@ -118,7 +176,7 @@ export class FeedsCardsManagerV2 extends FeedsCardsManager {
     if (!isNodeValid(node)) {
       return
     }
-    const vueData = getVueData(node)
+    const vueData = getVue2Data(node)
     if (!vueData) {
       return
     }
@@ -131,7 +189,8 @@ export class FeedsCardsManagerV2 extends FeedsCardsManager {
     this.dispatchCardEvent(FeedsCardsManagerEventType.RemoveCard, card)
   }
   updateCards(cardsList: HTMLElement) {
-    const selector = '.bili-dyn-list__item, :not(.bili-dyn-list__item) > .bili-dyn-item'
+    const selector =
+      '.bili-dyn-list__item, :not(.bili-dyn-list__item) > .bili-dyn-item, .bili-opus-view'
     const cards = dqa(cardsList, selector)
     cards.forEach(it => this.addCard(it))
     const getCardNode = (node: Node) => {

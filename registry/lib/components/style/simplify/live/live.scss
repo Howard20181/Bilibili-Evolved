@@ -1,6 +1,9 @@
+@import 'common';
 $prefix: 'simplifyLiveroom-switch';
+
 .#{$prefix} {
   &-vip .vip-icon,
+  &-wealthMedal .wealth-medal-ctnr,
   &-fansMedal .fans-medal-item-ctnr,
   &-title .title-label,
   &-userLevel .user-level-icon,
@@ -22,8 +25,10 @@ $prefix: 'simplifyLiveroom-switch';
   &-enterPrompt .chat-history-panel .brush-prompt,
   &-enterPrompt .chat-item.convention-msg,
   &-pk .chaos-pk,
+  &-pk .awesome-pk-box,
   &-topRank .chat-item.top3-notice,
-  &-topRank .chat-item .rank-icon {
+  &-topRank .chat-item .rank-icon,
+  &-recommendedRooms .left-container .room-info-ctnr {
     display: none !important;
   }
 }
@@ -33,12 +38,12 @@ $prefix: 'simplifyLiveroom-switch';
   .control-panel-ctnr .dialog-ctnr {
     z-index: 800 !important;
   }
-  .player-ctnr .room-info-ctnr {
-    display: inline-flex !important;
-    flex: 1 0 auto;
-    align-items: center !important;
-    margin-left: 12px !important;
-  }
+  // .player-ctnr .room-info-ctnr {
+  //   display: inline-flex !important;
+  //   flex: 1 0 auto;
+  //   align-items: center !important;
+  //   margin-left: 12px !important;
+  // }
   .head-info-section {
     height: 52px !important;
     box-sizing: content-box !important;
@@ -52,14 +57,6 @@ $prefix: 'simplifyLiveroom-switch';
     .face-pendants {
       display: none !important;
     }
-    // .blive-avatar-icons {
-    //   right: -2px !important;
-    //   .blive-avatar-icon {
-    //     width: 12px !important;
-    //     height: 12px !important;
-    //     border-width: 1px !important;
-    //   }
-    // }
     .blive-avatar-pendant {
       width: 48px !important;
       height: 48px !important;
@@ -81,53 +78,25 @@ $prefix: 'simplifyLiveroom-switch';
   }
   .rows-ctnr .upper-row,
   .room-info-upper-row {
-    display: flex !important;
-    align-items: center !important;
-    flex: 1 0 auto !important;
-    flex-direction: row-reverse !important;
-    position: static !important;
-
-    .left-ctnr,
-    .normal-mode {
-      position: absolute !important;
-      left: 50% !important;
-      transform: translateX(-50%) !important;
-    }
-    .live-area,
-    .area-text {
-      display: inline-flex !important;
-    }
-    .right-ctnr,
-    .upper-right-ctnr {
-      position: static !important;
-      transform: none !important;
-    }
-    .live-title,
-    .room-title {
-      display: flex !important;
-      align-items: center !important;
-
-      .text {
-        line-height: normal !important;
+    .right-ctnr {
+      .action-text:not(.watched-text) {
+        display: none !important;
       }
-      @media screen and (max-width: 1750px) {
-        & .title-length-limit {
-          max-width: 250px !important;
-        }
-      }
-    }
-    .info-section {
-      display: none !important;
     }
   }
   .rows-ctnr .lower-row,
   .room-info-down-row {
     margin: 0 !important;
-    order: -1;
-    .right-ctnr,
+    width: auto !important;
+    @include absolute-center();
+
+    .right-ctnr > :not(.popular-and-hot-rank),
     .left-ctnr > :nth-child(n + 3) {
       display: none !important;
     }
+  }
+  .popular-and-hot-rank {
+    width: 0 !important;
   }
   .room-owner-username {
     max-width: 150px !important;
@@ -195,12 +164,14 @@ $prefix: 'simplifyLiveroom-switch';
   .gift-control-panel .wish-icon,
   .gift-control-panel .wish-tip,
   .gift-control-panel .left-part-ctnr,
-  .web-live-player-gift-icon-wrap {
+  .web-live-player-gift-icon-wrap,
+  .gift-control-panel .gift-presets .gift-panel.gift-panel.gift-panel {
     display: none !important;
   }
   .gift-control-section,
   #gift-control-vm .gift-control-panel {
     height: 48px !important;
+    border-radius: 0 0 12px 12px;
   }
   .gift-control-panel .right-part {
     height: 48px !important;
@@ -219,6 +190,7 @@ $prefix: 'simplifyLiveroom-switch';
     .gift-presets {
       .gift-section {
         display: flex !important;
+        justify-content: flex-end !important;
       }
     }
     .more-gift-section {
@@ -231,6 +203,9 @@ $prefix: 'simplifyLiveroom-switch';
       position: static !important;
       .gift-package-btn {
         padding: 0 !important;
+      }
+      .package-gift-panel-position {
+        transform: translate(-180px, 50px);
       }
     }
     .right-part {
@@ -251,6 +226,25 @@ $prefix: 'simplifyLiveroom-switch';
     // }
     .skin-bg {
       height: 48px !important;
+    }
+  }
+  &.player-full-win {
+    #web-player__bottom-bar__container {
+      display: none !important;
+    }
+  }
+  &:not(.fullscreen-fix):not(.player-full-win) {
+    .fullscreen-container-paddingbox {
+      height: 48px !important;
+    }
+    #fullscreen-container {
+      border-radius: 0 0 12px 12px;
+      grid-template-rows: minmax(0, 1fr) auto !important;
+    }
+  }
+  &:not(.fullscreen-fix).player-full-win {
+    #fullscreen-container {
+      grid-template-rows: minmax(0, 1fr) 0px !important;
     }
   }
 }
@@ -278,6 +272,9 @@ $prefix: 'simplifyLiveroom-switch';
     display: block !important;
     border-radius: 0 !important;
     background-color: transparent !important;
+  }
+  .wealth-medal-ctnr.medal-guard {
+    display: none !important;
   }
   .fans-medal-item.medal-guard {
     margin-left: 0 !important;

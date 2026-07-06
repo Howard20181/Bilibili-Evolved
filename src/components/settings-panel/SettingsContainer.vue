@@ -61,6 +61,18 @@ export default {
       widgetsOpened: false,
     }
   },
+  mounted() {
+    GM_registerMenuCommand('功能', () => {
+      this.loadPanel('widgetsPanelPopup')
+      this.widgetsOpened = true
+      this.settingsOpened = false
+    })
+    GM_registerMenuCommand('设置', () => {
+      this.loadPanel('settingsPanelPopup')
+      this.widgetsOpened = false
+      this.settingsOpened = true
+    })
+  },
   methods: {
     theWorld() {
       externalApis.theWorld(0)
@@ -151,14 +163,14 @@ export default {
         transform: translateX(calc(60% * var(--direction))) scale(1.1);
         background-color: #fff;
         body.dark & {
-          background-color: #333;
+          background-color: var(--be-color-button-bg, #333);
         }
         .be-icon {
           color: #222;
           fill: #222;
           body.dark & {
-            color: #eee;
-            fill: #eee;
+            color: var(--be-color-text-title, #eee);
+            fill: var(--be-color-text-title, #eee);
           }
         }
       }

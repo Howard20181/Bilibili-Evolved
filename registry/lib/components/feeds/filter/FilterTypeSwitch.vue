@@ -9,59 +9,47 @@
   </div>
 </template>
 
-<script lang="ts">
-import { getComponentSettings } from '@/core/settings'
+<script setup lang="ts">
+import { watch, computed } from 'vue'
 import { VIcon } from '@/ui'
+import { useFeedsFilterState } from './state'
 
-const { options } = getComponentSettings('feedsFilter')
-export default Vue.extend({
-  components: {
-    VIcon,
-  },
-  props: {
-    name: {
-      type: String,
-      required: true,
-    },
-    type: {
-      type: Object,
-      required: true,
-    },
-  },
-  data() {
-    const optionKey = this.type.id >= 0 ? 'types' : 'specialTypes'
-    const disabled = options[optionKey].includes(this.type.id)
-    return {
-      disabled,
-      optionKey,
-    }
-  },
-  watch: {
-    disabled(newValue: boolean) {
-      this.setFilter(newValue)
-    },
-  },
-  created() {
-    this.setFilter(this.disabled, false)
-  },
-  methods: {
-    setFilter(disabled: boolean, updateSettings = true) {
-      document.body.classList[disabled ? 'add' : 'remove'](`feeds-filter-block-${this.name}`)
-      if (!updateSettings) {
-        return
-      }
-      if (disabled) {
-        options[this.optionKey].push(this.type.id)
-      } else {
-        const index = options[this.optionKey].indexOf(this.type.id)
-        if (index !== -1) {
-          options[this.optionKey].splice(index, 1)
-        }
-      }
-    },
+interface Props {
+  name: string
+  type: {
+    id: number
+    name: string
+  }
+}
+
+const props = defineProps<Props>()
+
+const { isTypeDisabled, setTypeDisabled } = useFeedsFilterState()
+
+const updateTypeFilterClass = (disabled: boolean) => {
+  if (disabled) {
+    document.body.classList.add(`feeds-filter-block-${props.name}`)
+  } else {
+    document.body.classList.remove(`feeds-filter-block-${props.name}`)
+  }
+}
+
+const disabled = computed({
+  get: () => isTypeDisabled(props.type.id),
+  set: (value: boolean) => {
+    setTypeDisabled(props.type.id, value)
   },
 })
+
+watch(
+  disabled,
+  (value: boolean) => {
+    updateTypeFilterClass(value)
+  },
+  { immediate: true },
+)
 </script>
+
 <style lang="scss">
 .feeds-filter-switch {
   &:not(:last-child) {
@@ -75,7 +63,7 @@ export default Vue.extend({
     display: flex;
     align-items: center;
     justify-content: space-between;
-    border: 1px solid #8884;
+    border: 1px solid var(--be-color-card-border, #8884);
 
     .name {
       font-size: 12px;
@@ -84,7 +72,7 @@ export default Vue.extend({
       color: var(--theme-color) !important;
     }
     &:hover {
-      background-color: #8882;
+      background-color: var(--be-color-highlight-bg-hover, #8882);
     }
     input {
       display: none;

@@ -1,17 +1,25 @@
 import { componentToSettings } from '@/core/settings'
 import { isBuiltInComponent } from './built-in-components'
 import { ComponentMetadata, componentsMap } from './component'
+import * as bisector from './bisector/api'
+import { BisectorOptions } from './bisector/options'
 
 /**
  * 安装自定义组件
  * @param code 组件代码
  */
-export const installComponent = async (code: string) => {
+export const installComponent = async (code: string, parsedComponent?: ComponentMetadata) => {
   const { components } = await import('./component')
-  const { parseExternalInput } = await import('../core/external-input')
-  const component = await parseExternalInput<ComponentMetadata>(code)
-  if (component === null) {
-    throw new Error('无效的组件代码')
+  let component: ComponentMetadata
+  if (parsedComponent) {
+    component = parsedComponent
+  } else {
+    try {
+      const { loadFeatureCode } = await import('@/core/external-input')
+      component = loadFeatureCode(code) as ComponentMetadata
+    } catch (e) {
+      throw new Error('无效的组件代码', { cause: e })
+    }
   }
   const { settings } = await import('@/core/settings')
   if (isBuiltInComponent(component.name)) {
@@ -37,7 +45,13 @@ export const installComponent = async (code: string) => {
     const defaultSettings = componentToSettings(component)
     lodash.defaultsDeep(
       existingComponent.settings.options,
-      lodash.pickBy(defaultSettings.options, value => !Array.isArray(value)),
+      lodash.pickBy(defaultSettings.options, (value, key) => {
+        const isArray = Array.isArray(value)
+        if (isArray) {
+          return lodash.get(existingComponent.settings.options, key) === undefined
+        }
+        return true
+      }),
     )
     return {
       metadata: component,
@@ -87,8 +101,8 @@ export const uninstallComponent = async (nameOrDisplayName: string) => {
     // 移除可能的 instantStyles
     const { instantStyles } = components[index]
     if (instantStyles) {
-      const { removeStyle } = await import('@/core/style')
-      instantStyles.forEach(s => removeStyle(s.name))
+      const { removeInstantStyle } = await import('@/core/style')
+      instantStyles.forEach(s => removeInstantStyle(s))
     }
     // 移除可能的 widgets
     componentSettings.enabled = false
@@ -129,4 +143,17 @@ export const toggleComponent = async (nameOrDisplayName: string) => {
   const { enabled } = userComponent.settings
   const { displayName } = userComponent.metadata
   return `已${enabled ? '开启' : '关闭'}组件'${displayName}', 可能需要刷新后才能生效`
+}
+
+/**
+ * 二等分自定义组件的开关状态
+ *
+ * @param options 二等分选项
+ * @returns
+ */
+export const bisectComponent = async (options?: BisectorOptions) => {
+  if (options) {
+    bisector.setOptions(options)
+  }
+  return bisector
 }

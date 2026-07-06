@@ -205,8 +205,7 @@ export const isNotHtml = () => document.contentType !== 'text/html'
  * @param eventName 事件名称
  */
 export const raiseEvent = (element: HTMLElement, eventName: string) => {
-  const event = document.createEvent('HTMLEvents')
-  event.initEvent(eventName, true, true)
+  const event = new Event(eventName)
   element.dispatchEvent(event)
 }
 /** 根据图片URL生成 `srcset`, 范围从 `@1x` 至 `@4x`, 每 `0.25x` 产生一个 `src`
@@ -353,6 +352,7 @@ export const preventEvent = (
 /**
  * 根据传入的对象拼接处 URL 查询字符串
  * @param obj 参数对象
+ * @deprecated 请使用 URLSearchParams
  */
 export const formData = (obj: Record<string, any>, config?: { encode?: boolean }) => {
   const { encode } = { encode: true, ...config }
@@ -518,16 +518,29 @@ export const playerReady = async () => {
 //   unsafeWindow.aid = info.aid.toString()
 //   return info.aid as string
 // }
+
+/** 获取当前聚焦的元素 */
+export const getActiveElement = () => {
+  let { activeElement } = document
+  while (activeElement.shadowRoot !== null) {
+    activeElement = activeElement.shadowRoot.activeElement
+  }
+  return activeElement
+}
 /** 是否正在打字 */
 export const isTyping = () => {
-  const { activeElement } = document
+  const activeElement = getActiveElement()
   if (!activeElement) {
     return false
   }
   if (activeElement.hasAttribute('contenteditable')) {
     return true
   }
-  return ['input', 'textarea'].includes(activeElement.nodeName.toLowerCase())
+  if (activeElement instanceof HTMLInputElement) {
+    const textInputTypes = ['text', 'password', 'email', 'number', 'search', 'tel', 'url']
+    return textInputTypes.includes(activeElement.type)
+  }
+  return activeElement instanceof HTMLTextAreaElement
 }
 /**
  * 提取元素中的可能的图片信息 (src, data-src, background-image 等). 如果是经过缩放的图, 会自动去除缩放参数返回原图链接
@@ -538,15 +551,21 @@ export const retrieveImageUrl = (element: HTMLElement) => {
   if (!(element instanceof HTMLElement)) {
     return null
   }
-  let url: string
-  if (element.hasAttribute('data-src')) {
-    url = element.getAttribute('data-src')
-  } else if (element instanceof HTMLImageElement) {
-    url = element.src
-  } else if (dq(element, 'picture img')) {
-    const image = dq(element, 'picture img') as HTMLImageElement
-    url = image.src
-  } else {
+  const url = (() => {
+    if (element.hasAttribute('data-src')) {
+      return element.getAttribute('data-src')
+    }
+    if (element instanceof HTMLImageElement) {
+      return element.src
+    }
+    if (element instanceof HTMLPictureElement && dq(element, 'img')) {
+      const image = dq(element, 'img') as HTMLImageElement
+      return image.src
+    }
+    if (dq(element, 'picture img')) {
+      const image = dq(element, 'picture img') as HTMLImageElement
+      return image.src
+    }
     const { backgroundImage } = element.style
     if (!backgroundImage) {
       return null
@@ -555,8 +574,9 @@ export const retrieveImageUrl = (element: HTMLElement) => {
     if (!match) {
       return null
     }
-    url = match[1]
-  }
+    return match[1]
+  })()
+
   const thumbMatch = url.match(/^(.+)(\..+?)(@.+)$/)
   if (thumbMatch) {
     return {
@@ -636,4 +656,81 @@ export const getRandomId = (length = 8) => {
     .map(it => it.toString(16).padStart(2, '0'))
     .join('')
     .substring(0, length)
+}
+
+/**
+ * 在未开发完成的代码处占位，抑制编译器、eslint、IDE 等的报错
+ *
+ * @example
+ * ```typescript
+ * const uncompleted = (arg1: number, arg2: string): number => {
+ *   return todo(arg1, arg2)
+ * }
+ * ```
+ */
+export const todo = (...args: unknown[]): never => {
+  throw new Error(`todo. args: ${JSON.stringify(args)}`)
+}
+
+/**
+ * 标记永远不会被执行到的位置
+ *
+ * @example
+ * ```typescript
+ * switch (code) {
+ *   case 0:
+ *     return 0
+ *   case 1:
+ *     return 1
+ *   default:
+ *     unreachable()
+ * }
+ * ```
+ */
+export const unreachable = (): never => {
+  throw new Error(`unreachable`)
+}
+
+/** 是否为流量计费网络 (不支持的浏览器仍按 false 算) */
+export const isDataSaveMode = () => {
+  return navigator.connection?.saveData ?? false
+}
+
+/**
+ * 模拟一次点击 (依次触发 `pointerdown`, `mousedown`, `pointerup`, `mouseup`, `click` 事件)
+ * @param target 点击的目标元素
+ * @param eventParams 事件参数
+ */
+export const simulateClick = (target: EventTarget, eventParams?: PointerEventInit) => {
+  const mouseDownEvent = new MouseEvent('mousedown', eventParams)
+  const mouseUpEvent = new MouseEvent('mouseup', eventParams)
+  const pointerDownEvent = new PointerEvent('pointerdown', eventParams)
+  const pointerUpEvent = new PointerEvent('pointerup', eventParams)
+  const clickEventEvent = new MouseEvent('click', eventParams)
+  target.dispatchEvent(pointerDownEvent)
+  target.dispatchEvent(mouseDownEvent)
+  target.dispatchEvent(pointerUpEvent)
+  target.dispatchEvent(mouseUpEvent)
+  target.dispatchEvent(clickEventEvent)
+}
+
+/** 尝试获取元素对应的 Vue Data (仅适用于 Vue 2 组件) */
+export const getVue2Data = (el: any) =>
+  // eslint-disable-next-line no-underscore-dangle
+  el.__vue__ ?? el.parentElement.__vue__ ?? el.children[0].__vue__ ?? el.__vueParentComponent
+
+/**
+ * 创建一个vue组件并动态注入 props
+ *
+ * 示例（脚本组件额外设置、小组件中传入参数值）：
+ *   extraOptions: () => import('./Setting.vue').then(m => createComponentWithProps(m.default, { isWidget: false })),
+ */
+export function createComponentWithProps(component: any, props: Record<string, any>) {
+  return Vue.extend({
+    render(h) {
+      return h(component, {
+        props,
+      })
+    },
+  })
 }
